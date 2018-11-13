@@ -9,6 +9,8 @@ import android.widget.TextView;
 
 import org.mindrot.jbcrypt.BCrypt;
 
+import java.security.MessageDigest;
+
 import static android.os.SystemClock.elapsedRealtime;
 
 public class MainActivity extends AppCompatActivity {
@@ -26,6 +28,13 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                MessageDigest md = null;
+                try {
+                    md = MessageDigest.getInstance("SHA-256");
+                }
+                catch (Exception e) {
+
+                }
                 String pswdToHash = et1.getText().toString();
                 String pswdToCheck = et2.getText().toString();
 
@@ -45,14 +54,60 @@ public class MainActivity extends AppCompatActivity {
 
                 long time3 = timestamp4 - timestamp3;
 
+                md.update(pswdToHash.getBytes());
+                byte[] digest = md.digest();
+                String sha256hash = bytesToHex(digest);
+                long timestamp5 = elapsedRealtime();
+
+                long time4 = timestamp5 - timestamp4;
+
+                md.reset();
+                md.update(pswdToCheck.getBytes());
+                digest = md.digest();
+                String sha256check = bytesToHex(digest);
+                long timestamp6 = elapsedRealtime();
+
+                long time5 = timestamp6 - timestamp5;
+
+                boolean validSHA = sha256hash.equals(sha256check);
+                long timestamp7 = elapsedRealtime();
+
+                long time6 = timestamp7 - timestamp6;
+
                 tx1.setText("");
+                tx1.append("BCrypt times: salt gen, hash gen, pswd check\r\n");
                 tx1.append(salt + "\r\n");
                 tx1.append(time1 + "\r\n\r\n");
                 tx1.append(hashedPassword + "\r\n");
                 tx1.append(time2 + "\r\n\r\n");
                 tx1.append((valid ? "valid" : "invalid") + "\r\n");
-                tx1.append(String.valueOf(time3));
+                tx1.append(time3 + "\r\n\r\n");
+                tx1.append("SHA256 times: hash gen, input hash gen, pswd check\r\n");
+                tx1.append(sha256hash + "\r\n");
+                tx1.append(time4 + "\r\n\r\n");
+                tx1.append(sha256check + "\r\n");
+                tx1.append(time5 + "\r\n\r\n");
+                tx1.append((valid ? "valid" : "invalid") + "\r\n");
+                tx1.append(String.valueOf(time6));
             }
         });
+    }
+
+    private static String bytesToHex(byte[] data) {
+        if (data == null) {
+            return null;
+        }
+
+        int len = data.length;
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < len; i++) {
+            if ((data[i] & 0xFF) < 16) {
+                stringBuilder.append('0');
+                stringBuilder.append(java.lang.Integer.toHexString(data[i] & 0xFF));
+            } else {
+                stringBuilder.append(java.lang.Integer.toHexString(data[i] & 0xFF));
+            }
+        }
+        return stringBuilder.toString();
     }
 }
